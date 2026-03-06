@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <path d="M100 10 L180 40 L180 110 C180 155 100 190 100 190 C100 190 20 155 20 110 L20 40 Z" fill="#0a0a1a" stroke="#d4af37" stroke-width="4"/>
+  <path d="M100 22 L168 48 L168 112 C168 150 100 180 100 180 C100 180 32 150 32 112 L32 48 Z" fill="none" stroke="#d4af37" stroke-width="1.5" opacity="0.5"/>
+  <text x="100" y="95" font-family="Arial Black, sans-serif" font-size="38" font-weight="900" fill="#d4af37" text-anchor="middle" letter-spacing="2">EA</text>
+  <text x="100" y="138" font-family="Arial Black, sans-serif" font-size="28" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="6">FC</text>
+  <polygon points="100,14 103,22 111,22 105,27 107,35 100,30 93,35 95,27 89,22 97,22" fill="#d4af37"/>
+</svg>

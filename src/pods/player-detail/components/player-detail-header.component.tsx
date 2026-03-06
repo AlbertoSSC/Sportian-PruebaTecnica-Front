@@ -1,7 +1,8 @@
-import { Avatar, Box, Chip, IconButton, Typography } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 import type { Player } from "@/common/types";
 import { getPlayerDisplayName } from "@/common/utils";
+
+import { Avatar, Box, Chip, IconButton, Typography } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 
 interface PlayerDetailHeaderProps {
   player: Player;
@@ -15,7 +16,8 @@ export function PlayerDetailHeader({
   return (
     <Box
       sx={{
-        background: "linear-gradient(135deg, #161b22 0%, #0d1117 100%)",
+        background: (theme) =>
+          `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.background.default} 100%)`,
         p: 3,
         position: "relative",
       }}

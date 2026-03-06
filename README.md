@@ -1,12 +1,12 @@
 # EAFC Ratings
 
-Prueba técnica frontend — React + TypeScript + Material UI.
+Frontend technical test — React + TypeScript + Material UI.
 
-Aplicación web que consume el API de EA Sports FC para mostrar el listado de jugadores con sus valoraciones, soporte de infinite scroll, caché y vista de detalle.
+Web application that consumes the EA Sports FC API to display a player list with ratings, infinite scroll, offline cache, and a detail view.
 
 ---
 
-## Inicio rápido
+## Quick start
 
 ```bash
 npm install
@@ -17,24 +17,26 @@ npm run build
 
 ---
 
-## Arquitectura
+## Architecture
 
-### Estructura de carpetas
+### Folder structure
 
 ```
 src/
-├── api/                        # Capa de acceso a datos (desacoplada)
-│   └── players.api.ts
+├── api/
+│   ├── players.api.ts
+│   └── players.cache.ts        # localStorage cache with TTL
 ├── common/
-│   ├── constants/              # Constantes globales (URL, page size…)
-│   ├── hooks/                  # Custom hooks reutilizables
-│   │   ├── use-players.hook.ts
-│   │   └── use-intersection-observer.hook.ts
-│   ├── types/                  # Interfaces TypeScript
-│   └── utils/                  # Funciones puras helper
+│   ├── constants/
+│   ├── hooks/
+│   │   ├── use-players.hook.ts              # useInfiniteQuery + pagination
+│   │   ├── use-intersection-observer.hook.ts
+│   │   └── use-debounce.hook.ts
+│   ├── types/
+│   └── utils/                  # Pure helper functions
 ├── core/
-│   ├── theme/                  # Tema MUI personalizado
-│   └── providers/              # AppProviders (QueryClient + ThemeProvider)
+│   ├── theme/                  # MUI theme
+│   └── providers/
 ├── pods/                       # Feature modules
 │   ├── player-list/
 │   │   ├── components/
@@ -44,81 +46,114 @@ src/
 │       ├── components/
 │       ├── player-detail.container.tsx
 │       └── player-detail.component.tsx
-├── scenes/                     # Páginas / rutas
+├── scenes/                     # Pages / routes
 │   └── home.scene.tsx
 └── test/
-    ├── mocks/                  # Fixtures + MSW server
-    └── unit/                   # Tests unitarios
+    ├── mocks/
+    └── unit/
 ```
 
-### Patrón scenes / pods / container / component
+### Pattern: scenes / pods / container / component
 
-- **Scene**: corresponde a una ruta. Orquesta pods.
-- **Pod**: feature module auto-contenido. Todo el código de una funcionalidad vive aquí.
-- **Container**: lógica de datos, estado derivado, efectos, callbacks.
-- **Component**: render puro. Recibe props.
-
----
-
-## Decisiones técnicas
-
-### TanStack Query v5 (useInfiniteQuery)
-
-Elegido por:
-- Manejo declarativo de loading / error / success
-- Cache automático: `staleTime` 5 min + `gcTime` 30 min — si falla la red, se sirven datos cacheados
-- `useInfiniteQuery` simplifica la paginación acumulativa
-- Deduplicación de peticiones automática
-
-### Infinite scroll con Intersection Observer
-
-Custom hook `useIntersectionObserver` con `rootMargin: 300px`. El sentinel (elemento invisible al final de la lista) dispara la siguiente página antes de que el usuario llegue al fondo, eliminando parpadeos.
-
-### MUI v7 — tema dark personalizado
-
-Paleta inspirada en los colores de EA FC (dorado `#c6a227`, fondo oscuro). Sistema de theme para tokens de color consistentes. Componentes MUI usados: `Card`, `Typography`, `Avatar`, `Chip`, `TextField`, `CircularProgress`, `Alert`, `LinearProgress`, `Drawer`, `Skeleton`, `Grid`.
-
-### Estrategia de caché / offline
-
-| Escenario | Comportamiento |
-|-----------|----------------|
-| Primera carga | Fetch real a la API |
-| Recarga / misma sesión (< 5 min) | Cache en memoria |
-| Pérdida de red después de carga | Datos disponibles 30 min |
-| Error en carga inicial | Alert con botón "Reintentar" |
+- **Scene**: maps to a route. Orchestrates pods.
+- **Pod**: self-contained feature module. All code for a feature lives here.
+- **Container**: owns state, custom hooks and callbacks. Renders no UI of its own.
+- **Component**: pure render with `memo`. Receives everything via props, unaware of data source.
 
 ---
 
-## Estrategia de paginación
+## Technical decisions
 
-La API devuelve `totalItems: 17873`. Se envían parámetros `offset` y `limit=25` en cada request. `getNextPageParam` calcula el siguiente offset sumando los items ya cargados. Si `fetched >= totalItems`, devuelve `undefined` y la carga termina.
+### TanStack Query v5 — `useInfiniteQuery`
+
+- `queryKey: [PLAYERS_QUERY_KEY, search]` — each search term has its own independent cache entry
+- `staleTime: 5 min` — no re-fetch when navigating within the session
+- Automatic request deduplication
+- Mutually exclusive states (`isLoading`, `isError`, `isFetchingNextPage`) — no inconsistent flags
+
+### Infinite scroll with Intersection Observer
+
+`useIntersectionObserver` with `rootMargin: "300px"` — the sentinel (a 1px div at the end of the list) triggers the next page **before** the user reaches the bottom, eliminating any visible wait. Double guard against duplicate calls: `enabled` disables the observer while fetching, and `handleFetchNext` checks `!isFetchingNextPage` before calling `fetchNextPage()`.
+
+### Two-layer cache strategy
+
+| Layer     | Technology     | Scope                   | TTL            |
+| --------- | -------------- | ----------------------- | -------------- |
+| In-memory | TanStack Query | Active session          | 15 min (stale) |
+| Disk      | localStorage   | Cross-session / offline | 1 hour         |
+
+`players.cache.ts` persists each page by `offset + query`. If `fetch` fails (network down) or the server returns an error, cached data is served. On write, if localStorage is full, expired entries are cleared and the write is retried before silently discarding.
+
+### Client-side search validation
+
+Before firing any request:
+
+- `length < 3` → warns "Enter at least 3 characters", no fetch
+- Contains numbers → warns "Search cannot contain numbers", no fetch
+- `debouncedSearch` at 300ms — avoids a request on every keystroke
+
+If the server returns a 400 with `validationErrors[]`, the first message is parsed and shown inline.
+
+### MUI v7 — dark theme
+
+Color palette inspired by EA FC.
+`shape.borderRadius: 10` applied globally — `borderRadius: 1.5` in sx translates to `15px`.
+Global overrides for `MuiCard`, `MuiChip` and `MuiTextField`.
+
+---
+
+## UI state modelling
+
+| State               | Flag                   | Component                     |
+| ------------------- | ---------------------- | ----------------------------- |
+| Initial loading     | `isLoading`            | `PlayerListSkeletonComponent` |
+| Error               | `isError`              | `Alert` + Retry button        |
+| Empty               | `players.length === 0` | `PlayerEmptyStateComponent`   |
+| Success             | `players.length > 0`   | `PlayerCardComponent` grid    |
+| Incremental loading | `isFetchingNextPage`   | Inline `CircularProgress`     |
+| All loaded          | `!hasNextPage`         | "All players loaded" Chip     |
+
+Loading/error/success states are rendered via early returns inside an IIFE in the JSX — mutually exclusive.
+
+---
+
+## Pagination
+
+The API accepts `offset` and `limit`.
+`getNextPageParam` computes the next offset by summing all already-downloaded items across pages. Returns `undefined` when `fetched >= totalItems`, setting `hasNextPage = false` and stopping the infinite scroll.
+
+```
+GET https://drop-api.ea.com/rating/ea-sports-fc?locale=es&offset=0&limit=25
+GET https://drop-api.ea.com/rating/ea-sports-fc?locale=es&offset=25&limit=25
+...
+```
+
 ---
 
 ## Testing
 
-**Vitest** + **React Testing Library** + **MSW** (intercepta fetch).
+**Vitest** + **React Testing Library** + **MSW v2** (intercepts `fetch` at network level).
 
 ```bash
 npm run test
 ```
 
-Cobertura:
-- Funciones puras (`player.utils`)
-- Componente de tarjeta (`PlayerCard`)
-- Drawer de detalle (`PlayerDetail`)
-- Integración container + lista (`PlayerListContainer`): loading, success, filtro, error, retry
-- Custom hook (`usePlayers`): isLoading, players, totalItems, hasNextPage
+Coverage:
+
+- Pure functions (`player.utils`)
+- `PlayerCardComponent` — render, interaction, commonName
+- `PlayerDetailComponent` — drawer render, subcomponents
+- `PlayerListContainer` — loading, success, error, retry, search
+- `usePlayers` hook — isLoading, players, totalItems, hasNextPage
 
 ---
 
-## Trade-offs y mejoras con más tiempo
+## Trade-offs and future improvements
 
-| Aspecto | Estado actual | Mejora |
-|---------|--------------|--------|
-| Persistencia offline | Cache en memoria (30 min) | `@tanstack/query-persist-client-core` + IndexedDB |
-| Virtualización | DOM completo | `@tanstack/react-virtual` para listas >500 items |
-| Tests e2e | Sin tests e2e | Playwright |
-| Filtros | Solo nombre | Posición, rating mínimo, liga, nación |
-| Error boundary | Sin error boundary global | ErrorBoundary en el árbol |
-| Deploy | Solo local | Vercel / Netlify CI/CD |
-
+| Area              | Current state            | Future improvement                                                           |
+| ----------------- | ------------------------ | ---------------------------------------------------------------------------- |
+| Virtualisation    | Full DOM                 | `@tanstack/react-virtual`                                                    |
+| Filters           | Name search only         | Position, league, nationality                                                |
+| Player comparison | Not implemented          | Compare stats between two or more players                                    |
+| Error boundary    | No global error boundary | `ErrorBoundary` wrapping the provider tree to catch unexpected render errors |
+| E2E tests         | None                     | Playwright against the real app                                              |

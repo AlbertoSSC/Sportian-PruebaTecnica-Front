@@ -5,18 +5,14 @@ export const theme = createTheme({
     mode: "dark",
     primary: {
       main: "#c6a227",
-      light: "#f0c040",
-      dark: "#8a6a00",
-      contrastText: "#000",
     },
     secondary: {
       main: "#1a73e8",
-      light: "#4f9cf9",
       dark: "#0d47a1",
     },
     background: {
       default: "#0d1117",
-      paper: "#161b22",
+      paper: "#11151b",
     },
     text: {
       primary: "#e6edf3",
@@ -25,19 +21,12 @@ export const theme = createTheme({
     error: {
       main: "#f85149",
     },
-    success: {
-      main: "#3fb950",
-    },
     warning: {
       main: "#d29922",
     },
   },
   typography: {
     fontFamily: '"Inter", "Roboto", "Helvetica Neue", Arial, sans-serif',
-    h4: { fontWeight: 700 },
-    h5: { fontWeight: 600 },
-    h6: { fontWeight: 600 },
-    subtitle1: { fontWeight: 500 },
   },
   shape: {
     borderRadius: 10,
@@ -60,7 +49,7 @@ export const theme = createTheme({
       },
     },
     MuiTextField: {
-      defaultProps: { variant: "outlined", size: "small" },
+      defaultProps: { size: "small" },
     },
   },
 });

@@ -1,10 +1,12 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { fetchPlayers } from '@/api';
-import type { Player } from '@/common/types';
+import { useInfiniteQuery } from "@tanstack/react-query";
 
-export const PLAYERS_QUERY_KEY = 'players' as const;
+import { fetchPlayers } from "@/api";
+import type { Player } from "@/common/types";
 
-export function usePlayers(search = '') {
+export const PLAYERS_QUERY_KEY = "players" as const;
+const STALE_TIME_MS = 15 * 60 * 1000;
+
+export function usePlayers(search = "") {
   const {
     data,
     fetchNextPage,
@@ -23,7 +25,7 @@ export function usePlayers(search = '') {
       const fetched = allPages.reduce((acc, p) => acc + p.items.length, 0);
       return fetched < lastPage.totalItems ? fetched : undefined;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: STALE_TIME_MS,
     select: (data) => ({
       pages: data.pages,
       pageParams: data.pageParams,
@@ -46,4 +48,4 @@ export function usePlayers(search = '') {
   };
 }
 
-export type UsePlayersReturn = ReturnType<typeof usePlayers>;
+// export type UsePlayersReturn = ReturnType<typeof usePlayers>;

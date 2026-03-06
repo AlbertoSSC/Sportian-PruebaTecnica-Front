@@ -1,4 +1,7 @@
 import { memo } from "react";
+
+import type { Player } from "@/common/types";
+import { getPlayerDisplayName, getStatColor } from "@/common/utils";
 import {
   Card,
   CardActionArea,
@@ -8,33 +11,26 @@ import {
   Box,
   Chip,
 } from "@mui/material";
-import type { Player } from "@/common/types";
-import { getPlayerDisplayName, getStatColor } from "@/common/utils";
 
 interface PlayerCardComponentProps {
   player: Player;
-  onClick: () => void;
+  onSelect: (player: Player) => void;
 }
 
 const MAIN_STATS = ["pac", "sho", "pas", "dri", "def", "phy"];
-const STAT_LABELS: Record<string, string> = {
-  pac: "PAC",
-  sho: "SHO",
-  pas: "PAS",
-  dri: "DRI",
-  def: "DEF",
-  phy: "PHY",
-};
 
 export const PlayerCardComponent = memo(function PlayerCardComponent({
   player,
-  onClick,
+  onSelect,
 }: PlayerCardComponentProps) {
   const displayName = getPlayerDisplayName(player);
 
   return (
     <Card sx={{ height: "100%" }}>
-      <CardActionArea onClick={onClick} sx={{ height: "100%", p: 2 }}>
+      <CardActionArea
+        onClick={() => onSelect(player)}
+        sx={{ height: "100%", p: 2 }}
+      >
         <CardContent>
           <Box
             sx={{
@@ -84,11 +80,7 @@ export const PlayerCardComponent = memo(function PlayerCardComponent({
                   }}
                 />
               </Box>
-              <Typography
-                variant="subtitle1"
-                noWrap
-                sx={{ fontWeight: 600, mt: 0.25 }}
-              >
+              <Typography noWrap sx={{ fontWeight: 600, mt: 0.25 }}>
                 {displayName}
               </Typography>
               <Typography variant="body2" color="text.secondary" noWrap>
@@ -124,7 +116,7 @@ export const PlayerCardComponent = memo(function PlayerCardComponent({
                     color="text.secondary"
                     sx={{ fontSize: "0.6rem" }}
                   >
-                    {STAT_LABELS[stat]}
+                    {stat.toUpperCase()}
                   </Typography>
                 </Box>
               );

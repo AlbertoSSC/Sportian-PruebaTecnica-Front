@@ -1,7 +1,7 @@
 import type { PlayersApiResponse } from '@/common/types';
 
 const CACHE_PREFIX = "eafc_page_";
-export const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+export const CACHE_TTL_MS = 60 * 60 * 1000;
 
 function cacheKey(offset: number, query?: string): string {
   return query ? `${CACHE_PREFIX}q:${query}:${offset}` : `${CACHE_PREFIX}${offset}`;

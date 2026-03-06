@@ -27,8 +27,7 @@ export async function fetchPlayers({
   limit = PAGE_SIZE,
   query,
 }: FetchPlayersParams): Promise<PlayersApiResponse> {
-  const base = API_BASE_URL.startsWith('http') ? API_BASE_URL : `${window.location.origin}${API_BASE_URL}`;
-  const url = new URL(base);
+  const url = new URL(API_BASE_URL, window.location.origin);
   url.searchParams.set('locale', LOCALE);
   url.searchParams.set('offset', String(offset));
   url.searchParams.set('limit', String(limit));
@@ -36,7 +35,7 @@ export async function fetchPlayers({
 
   let response: Response;
   try {
-    response = await fetch(url.toString());
+    response = await fetch(url);
   } catch {
     const cached = readCache(offset, query);
     if (cached) return cached;
@@ -46,6 +45,7 @@ export async function fetchPlayers({
   if (!response.ok) {
     const cached = readCache(offset, query);
     if (cached) return cached;
+    
     let errorMessage = `API Error: ${response.status} ${response.statusText}`;
     try {
       const body: unknown = await response.json();
@@ -54,25 +54,7 @@ export async function fetchPlayers({
     throw new Error(errorMessage);
   }
 
-  const data = await response.json();
-
-  // Normalize response: EA API may return array directly or wrapped
-  let items: PlayersApiResponse['items'];
-  let totalItems: number;
-
-  if (Array.isArray(data)) {
-    items = data as PlayersApiResponse['items'];
-    totalItems = items.length;
-  } else {
-    const obj = data as Record<string, unknown>;
-    items = (obj.items ?? obj.players ?? obj.data ?? []) as PlayersApiResponse['items'];
-    totalItems = (obj.totalItems ?? obj.total ?? items.length) as number;
-  }
-
-  const result: PlayersApiResponse = {
-    items: Array.isArray(items) ? items : [],
-    totalItems,
-  };
+  const result: PlayersApiResponse = await response.json();
 
   writeCache(offset, result, query);
   return result;

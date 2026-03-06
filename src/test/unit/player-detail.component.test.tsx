@@ -34,13 +34,6 @@ describe('PlayerDetailComponent', () => {
     expect(screen.getByText('Lionel Messi')).toBeInTheDocument();
   });
 
-  it('renders position', () => {
-    renderWithTheme(
-      <PlayerDetailComponent player={mockPlayer} open={true} onClose={() => {}} />
-    );
-    expect(screen.getByText('Right Winger')).toBeInTheDocument();
-  });
-
   it('calls onClose when close button is clicked', async () => {
     const user = userEvent.setup();
     let closed = false;

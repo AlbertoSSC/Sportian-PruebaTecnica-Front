@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+
 import { usePlayers, useIntersectionObserver, useDebounce } from '@/common/hooks';
 import { PlayerListComponent } from './player-list.component';
 import type { Player } from '@/common/types';
